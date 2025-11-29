@@ -1,10 +1,22 @@
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { getSettings, BusinessSettings } from '../utils/settings';
 
 interface ContactProps {
   t: any;
 }
 
 export function Contact({ t }: ContactProps) {
+  const [settings, setSettings] = useState<BusinessSettings | null>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const data = await getSettings();
+      setSettings(data);
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <section id="contact" className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -22,7 +34,7 @@ export function Contact({ t }: ContactProps) {
                   </div>
                   <div>
                     <h3 className="mb-1">Address</h3>
-                    <p className="text-gray-600">{t.contact.address}</p>
+                    <p className="text-gray-600">{settings?.address || t.contact.address}</p>
                   </div>
                 </div>
 
@@ -32,7 +44,7 @@ export function Contact({ t }: ContactProps) {
                   </div>
                   <div>
                     <h3 className="mb-1">Phone</h3>
-                    <p className="text-gray-600">{t.contact.phone.replace('Phone: ', '')}</p>
+                    <p className="text-gray-600">{settings?.phone || t.contact.phone.replace('Phone: ', '')}</p>
                   </div>
                 </div>
 
@@ -42,7 +54,7 @@ export function Contact({ t }: ContactProps) {
                   </div>
                   <div>
                     <h3 className="mb-1">Email</h3>
-                    <p className="text-gray-600">{t.contact.email.replace('Email: ', '').replace('Correo: ', '')}</p>
+                    <p className="text-gray-600">{settings?.email || t.contact.email.replace('Email: ', '').replace('Correo: ', '')}</p>
                   </div>
                 </div>
 
@@ -52,25 +64,33 @@ export function Contact({ t }: ContactProps) {
                   </div>
                   <div>
                     <h3 className="mb-1">Hours</h3>
-                    <p className="text-gray-600">{t.contact.hours.replace('Hours: ', '').replace('Horario: ', '')}</p>
+                    <p className="text-gray-600">{settings?.hours || t.contact.hours.replace('Hours: ', '').replace('Horario: ', '')}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-lg">
-              <div className="h-full w-full bg-gray-200 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d528.5131862478289!2d-84.09626289048713!3d10.029769425030603!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1ses-419!2scr!4v1759266248821!5m2!1ses-419!2scr"
-                    width="100%"
-                    height="350"
-                    style={{ border: 0, borderRadius: '8px' }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-
+              <div className="h-full w-full bg-gray-200 rounded-lg">
+                <iframe
+                  src={settings ? `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d766.125421148198!2d${settings.longitude}!3d${settings.latitude}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1ses!2scr!4v1763913695694!5m2!1ses!2scr` : "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d528.5131862478289!2d-84.09626289048713!3d10.029769425030603!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1ses-419!2scr!4v1759266248821!5m2!1ses-419!2scr"}
+                  width="100%"
+                  height="300"
+                  style={{ border: 0, borderRadius: '8px' }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                ></iframe>
+                <div className="mt-4">
+                  <a
+                    href={settings ? `https://www.google.com/maps/place/${settings.latitude},${settings.longitude}` : "https://www.google.com/maps"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View on Google Maps
+                  </a>
                 </div>
               </div>
             </div>

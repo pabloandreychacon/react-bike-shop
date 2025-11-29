@@ -20,9 +20,9 @@ export function About({ t }: AboutProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
               <Award className="w-8 h-8" />
             </div>
-            <h3 className="mb-2">Premium Quality</h3>
+            <h3 className="mb-2">{t.about.features.quality.title}</h3>
             <p className="text-gray-600">
-              We stock only the finest bicycles from trusted manufacturers
+              {t.about.features.quality.description}
             </p>
           </div>
 
@@ -30,9 +30,9 @@ export function About({ t }: AboutProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
               <Users className="w-8 h-8" />
             </div>
-            <h3 className="mb-2">Expert Team</h3>
+            <h3 className="mb-2">{t.about.features.team.title}</h3>
             <p className="text-gray-600">
-              Our knowledgeable staff helps you find the perfect bike
+              {t.about.features.team.description}
             </p>
           </div>
 
@@ -40,9 +40,9 @@ export function About({ t }: AboutProps) {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-full mb-4">
               <Wrench className="w-8 h-8" />
             </div>
-            <h3 className="mb-2">Full Service</h3>
+            <h3 className="mb-2">{t.about.features.service.title}</h3>
             <p className="text-gray-600">
-              Professional maintenance and repair services available
+              {t.about.features.service.description}
             </p>
           </div>
         </div>

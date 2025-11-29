@@ -7,6 +7,7 @@ import { BikesPage } from "./pages/BikesPage";
 import { ServicesPage } from "./pages/ServicesPage";
 import { AboutPage } from "./pages/AboutPage";
 import { ContactPage } from "./pages/ContactPage";
+import { AdminPage } from "./pages/AdminPage";
 import { useTranslation, Language } from "./utils/i18n";
 
 export default function App() {
@@ -22,14 +23,15 @@ export default function App() {
           t={t}
         />
         <Routes>
-          <Route path="/" element={<Home t={t} />} />
-          <Route path="/bikes" element={<BikesPage t={t} />} />
-          <Route path="/services" element={<ServicesPage t={t} />} />
+          <Route path="/" element={<Home t={t} language={language} />} />
+          <Route path="/bikes" element={<BikesPage t={t} language={language} />} />
+          <Route path="/services" element={<ServicesPage t={t} language={language} />} />
           <Route path="/about" element={<AboutPage t={t} />} />
           <Route
             path="/contact"
             element={<ContactPage t={t} />}
           />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
         <Footer t={t} />
       </div>
