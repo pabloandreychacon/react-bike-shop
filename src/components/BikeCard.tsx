@@ -8,7 +8,7 @@ interface BikeCardProps {
 export function BikeCard({ bike, bikesData }: BikeCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-      <div className="aspect-[4/3] overflow-hidden">
+      <div className="aspect-4/3 overflow-hidden">
         <img
           src={bike.image}
           alt={bike.name}

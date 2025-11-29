@@ -29,7 +29,7 @@ export function Contact({ t }: ContactProps) {
             <div className="bg-white p-8 rounded-xl shadow-lg">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+                  <div className="shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                     <MapPin className="w-6 h-6" />
                   </div>
                   <div>

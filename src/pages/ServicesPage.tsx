@@ -70,7 +70,7 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
                 return (
                   <div key={service.id || `service-${index}`} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow">
                     <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
+                      <div className="shrink-0">
                         {icons[index % icons.length]}
                       </div>
                       <div className="flex-1">

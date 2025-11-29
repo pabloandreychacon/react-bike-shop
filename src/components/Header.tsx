@@ -28,142 +28,121 @@ export function Header({ language, setLanguage, t }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50">
-      <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
-          <BikeIcon className="w-8 h-8 text-blue-600" />
-          <span className="font-semibold text-xl">{settings?.name || 'Ciclo Renacer'}</span>
-        </Link>
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link to="/" className="flex items-center gap-2">
+            <BikeIcon className="w-8 h-8 text-blue-600" />
+            <span className="sm:text-sm md:text-lg xl:text-xl font-bold text-gray-900">
+              {settings?.name || 'Ciclo Renacer'}
+            </span>
+          </Link>
 
-        <ul className="hidden md:flex items-center gap-8">
-          <li>
+          <nav className="hidden md:flex items-center gap-6">
             <Link
               to="/"
-              className={`hover:text-blue-600 transition-colors ${isActive('/') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               {t.nav.home}
             </Link>
-          </li>
-          <li>
             <Link
               to="/bikes"
-              className={`hover:text-blue-600 transition-colors ${isActive('/bikes') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               {t.nav.bikes}
             </Link>
-          </li>
-          <li>
             <Link
               to="/services"
-              className={`hover:text-blue-600 transition-colors ${isActive('/services') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               {t.nav.services}
             </Link>
-          </li>
-          <li>
             <Link
               to="/about"
-              className={`hover:text-blue-600 transition-colors ${isActive('/about') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               {t.nav.about}
             </Link>
-          </li>
-          <li>
             <Link
               to="/contact"
-              className={`hover:text-blue-600 transition-colors ${isActive('/contact') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               {t.nav.contact}
             </Link>
-          </li>
-          <li>
             <Link
               to="/admin"
-              className={`hover:text-blue-600 transition-colors ${isActive('/admin') ? 'text-blue-600' : ''}`}
+              className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
             >
               Admin
             </Link>
-          </li>
-        </ul>
+          </nav>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-          >
-            <Languages className="w-4 h-4" />
-            {language === 'en' ? 'ES' : 'EN'}
-          </button>
-
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'es' : 'en')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              <Languages className="w-4 h-4" />
+              {language === 'en' ? 'ES' : 'EN'}
+            </button>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 text-gray-700 hover:text-blue-600"
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {isMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white shadow-lg md:hidden">
-            <ul className="flex flex-col py-4">
-              <li>
-                <Link
-                  to="/"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  {t.nav.home}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/bikes"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/bikes') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  {t.nav.bikes}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/services"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/services') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  {t.nav.services}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/about"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/about') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  {t.nav.about}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contact"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/contact') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  {t.nav.contact}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-4 py-3 hover:bg-gray-50 transition-colors ${isActive('/admin') ? 'text-blue-600 bg-blue-50' : ''}`}
-                >
-                  Admin
-                </Link>
-              </li>
-            </ul>
+          <div className="md:hidden border-t border-gray-200">
+            <nav className="px-4 py-3 space-y-3">
+              <Link
+                to="/"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                {t.nav.home}
+              </Link>
+              <Link
+                to="/bikes"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                {t.nav.bikes}
+              </Link>
+              <Link
+                to="/services"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                {t.nav.services}
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                {t.nav.about}
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                {t.nav.contact}
+              </Link>
+              <Link
+                to="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="block text-gray-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                Admin
+              </Link>
+            </nav>
           </div>
         )}
-      </nav>
+      </div>
     </header>
   );
 }
