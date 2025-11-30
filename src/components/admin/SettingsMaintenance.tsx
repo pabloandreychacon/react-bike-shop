@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getSettings, BusinessSettings } from '../../utils/settings';
+import bcrypt from 'bcryptjs';
 
 export function SettingsMaintenance() {
   const [settings, setSettings] = useState<BusinessSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -28,19 +32,33 @@ export function SettingsMaintenance() {
     setMessage('');
 
     try {
+      let updateData: any = {
+        Phone: settings.phone,
+        Address: settings.address,
+        BusinessName: settings.name,
+        MapLocation: `${settings.latitude},${settings.longitude}`
+      };
+
+      // Update password if provided
+      if (newPassword) {
+        if (newPassword !== confirmPassword) {
+          setMessage('Passwords do not match');
+          setSaving(false);
+          return;
+        }
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        updateData.OnlinePassword = hashedPassword;
+      }
+
       const { error } = await supabase
         .from('Settings')
-        .update({
-          Phone: settings.phone,
-          Address: settings.address,
-          BusinessName: settings.name,
-          MapLocation: `${settings.latitude},${settings.longitude}`,
-          OnlinePassword: settings.onlinePassword
-        })
+        .update(updateData)
         .eq('Email', settings.email);
 
       if (error) throw error;
       setMessage('Settings saved successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setMessage('Error saving settings');
     } finally {
@@ -130,6 +148,46 @@ export function SettingsMaintenance() {
               onChange={(e) => setSettings(prev => prev ? {...prev, longitude: parseFloat(e.target.value)} : null)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        </div>
+
+        <div className="border-t pt-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Update Password</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  placeholder="Leave empty to keep current password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Confirm new password"
+              />
+            </div>
           </div>
         </div>
 
