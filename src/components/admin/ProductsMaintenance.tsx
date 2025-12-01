@@ -12,10 +12,15 @@ interface Product {
   ImageUrl: string;
   IsService: boolean;
   Active: boolean;
-  BusinessEmail: string;
+  IdBusiness: number;
+  BusinessEmail?: string;
 }
 
-export function ProductsMaintenance() {
+interface ProductsMaintenanceProps {
+  t: any;
+}
+
+export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -32,7 +37,7 @@ export function ProductsMaintenance() {
       const { data, error } = await supabase
         .from('Products')
         .select('*')
-        .eq('BusinessEmail', settings.email)
+        .eq('IdBusiness', settings.id)
         .order('Name');
 
       if (error) throw error;
@@ -48,7 +53,7 @@ export function ProductsMaintenance() {
   const handleSave = async (product: Product) => {
     try {
       const settings = await getSettings();
-      const productData = { ...product, BusinessEmail: settings.email };
+      const productData = { ...product, IdBusiness: settings.id, BusinessEmail: settings.email };
 
       if (product.Id) {
         const { error } = await supabase
@@ -72,7 +77,7 @@ export function ProductsMaintenance() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm(t.products.confirmDelete)) return;
 
     try {
       const { error } = await supabase
@@ -100,48 +105,49 @@ export function ProductsMaintenance() {
       ImageUrl: product?.ImageUrl || '',
       IsService: product?.IsService || false,
       Active: product?.Active ?? true,
+      IdBusiness: product?.IdBusiness || 0,
       BusinessEmail: product?.BusinessEmail || '',
       ...(product?.Id && { Id: product.Id })
     });
 
     return (
       <div className="bg-gray-50 p-4 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.name}</label>
             <input
               type="text"
               value={formData.Name}
-              onChange={(e) => setFormData({...formData, Name: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.price}</label>
             <input
               type="number"
               value={formData.Price}
-              onChange={(e) => setFormData({...formData, Price: parseFloat(e.target.value) || 0})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setFormData({ ...formData, Price: parseFloat(e.target.value) || 0 })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.imageUrl}</label>
             <input
               type="url"
               value={formData.ImageUrl}
-              onChange={(e) => setFormData({...formData, ImageUrl: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => setFormData({ ...formData, ImageUrl: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.description}</label>
             <textarea
               value={formData.Description}
-              onChange={(e) => setFormData({...formData, Description: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -149,10 +155,10 @@ export function ProductsMaintenance() {
               <input
                 type="checkbox"
                 checked={formData.IsService}
-                onChange={(e) => setFormData({...formData, IsService: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, IsService: e.target.checked })}
                 className="mr-2"
               />
-              <span className="text-sm font-medium text-gray-700">Is Service</span>
+              <span className="text-sm font-medium text-gray-700">{t.products.isService}</span>
             </label>
           </div>
           <div>
@@ -160,27 +166,27 @@ export function ProductsMaintenance() {
               <input
                 type="checkbox"
                 checked={formData.Active}
-                onChange={(e) => setFormData({...formData, Active: e.target.checked})}
+                onChange={(e) => setFormData({ ...formData, Active: e.target.checked })}
                 className="mr-2"
               />
-              <span className="text-sm font-medium text-gray-700">Active</span>
+              <span className="text-sm font-medium text-gray-700">{t.products.active}</span>
             </label>
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
           >
             <X className="w-4 h-4 inline mr-1" />
-            Cancel
+            {t.products.cancel}
           </button>
           <button
             onClick={() => onSave(formData)}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
           >
             <Save className="w-4 h-4 inline mr-1" />
-            Save
+            {t.products.save}
           </button>
         </div>
       </div>
@@ -188,19 +194,19 @@ export function ProductsMaintenance() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading products...</div>;
+    return <div className="text-center py-8">{t.products.loading}</div>;
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Products Management</h2>
+        <h2 className="text-xl font-semibold">{t.products.title}</h2>
         <button
           onClick={() => setIsCreating(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Product
+          {t.products.addProduct}
         </button>
       </div>
 
@@ -211,10 +217,10 @@ export function ProductsMaintenance() {
               Name: '',
               Description: '',
               Price: 0,
-
               ImageUrl: '',
               IsService: false,
               Active: true,
+              IdBusiness: 0,
               BusinessEmail: ''
             }}
             onSave={handleSave}
@@ -226,55 +232,53 @@ export function ProductsMaintenance() {
       <div className="space-y-4">
         {products.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No products found. Click "Add Product" to create your first product.
+            {t.products.noProducts}
           </div>
         ) : (
           products.map((product) => (
-          <div key={product.Id} className="bg-white border border-gray-200 rounded-lg p-4">
-            {editingProduct?.Id === product.Id ? (
-              <ProductForm
-                product={editingProduct}
-                onSave={handleSave}
-                onCancel={() => setEditingProduct(null)}
-              />
-            ) : (
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-2">
-                    <h3 className="text-lg font-medium">{product.Name}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      product.IsService ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {product.IsService ? 'Service' : 'Product'}
-                    </span>
+            <div key={product.Id} className="bg-white border border-gray-200 rounded-lg p-4">
+              {editingProduct?.Id === product.Id ? (
+                <ProductForm
+                  product={editingProduct}
+                  onSave={handleSave}
+                  onCancel={() => setEditingProduct(null)}
+                />
+              ) : (
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-2 px-4 py-4">
+                      <h3 className="text-lg font-medium">{product.Name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${product.IsService ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                        {product.IsService ? t.products.service : t.products.product}
+                      </span>
 
-                    <span className="text-sm font-medium text-green-600">${product.Price}</span>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {product.Active ? 'Active' : 'Inactive'}
-                    </span>
+                      <span className="text-sm font-medium text-green-600">${product.Price}</span>
+                      <span className={`px-2 py-1 text-xs rounded-full ${product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                        {product.Active ? t.products.active : t.products.inactive}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm px-4 py-4">{product.Description}</p>
                   </div>
-                  <p className="text-gray-600 text-sm">{product.Description}</p>
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => setEditingProduct(product)}
+                      className="p-2 text-gray-400 hover:text-blue-600"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => product.Id && handleDelete(product.Id)}
+                      className="p-2 text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={() => setEditingProduct(product)}
-                    className="p-2 text-gray-400 hover:text-blue-600"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => product.Id && handleDelete(product.Id)}
-                    className="p-2 text-gray-400 hover:text-red-600"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))
+              )}
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -32,7 +32,7 @@ export default function App() {
             path="/contact"
             element={<ContactPage t={t} />}
           />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={<AdminPage t={t} />} />
         </Routes>
         <Footer t={t} />
         <GoToTop />

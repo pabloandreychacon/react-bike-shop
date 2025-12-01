@@ -5,7 +5,11 @@ import { getSettings } from '../utils/settings';
 import { SettingsMaintenance } from '../components/admin/SettingsMaintenance';
 import { ProductsMaintenance } from '../components/admin/ProductsMaintenance';
 
-export function AdminPage() {
+interface AdminPageProps {
+  t: any;
+}
+
+export function AdminPage({ t }: AdminPageProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'settings' | 'products'>('settings');
@@ -24,10 +28,10 @@ export function AdminPage() {
       if (isValid) {
         setIsAuthenticated(true);
       } else {
-        setError('Invalid password');
+        setError(t.admin.invalidPassword);
       }
     } catch (err) {
-      setError('Authentication failed');
+      setError(t.admin.authFailed);
     } finally {
       setLoading(false);
     }
@@ -42,13 +46,13 @@ export function AdminPage() {
               <Lock className="h-6 w-6 text-blue-600" />
             </div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              Admin Access
+              {t.admin.title}
             </h2>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="password" className="sr-only">
-                Password
+                {t.admin.password}
               </label>
               <input
                 id="password"
@@ -56,7 +60,7 @@ export function AdminPage() {
                 type="password"
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter admin password"
+                placeholder={t.admin.passwordPlaceholder}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -70,7 +74,7 @@ export function AdminPage() {
                 disabled={loading}
                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {loading ? 'Authenticating...' : 'Sign In'}
+                {loading ? t.admin.authenticating : t.admin.signIn}
               </button>
             </div>
           </form>
@@ -83,7 +87,7 @@ export function AdminPage() {
     <div className="min-h-screen bg-gray-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.admin.dashboard}</h1>
           
           <div className="bg-white shadow rounded-lg">
             <div className="border-b border-gray-200">
@@ -97,7 +101,7 @@ export function AdminPage() {
                   }`}
                 >
                   <Settings className="w-4 h-4 inline mr-2" />
-                  Settings
+                  {t.admin.settings}
                 </button>
                 <button
                   onClick={() => setActiveTab('products')}
@@ -108,14 +112,14 @@ export function AdminPage() {
                   }`}
                 >
                   <Package className="w-4 h-4 inline mr-2" />
-                  Products
+                  {t.admin.products}
                 </button>
               </nav>
             </div>
             
             <div className="p-6">
-              {activeTab === 'settings' && <SettingsMaintenance />}
-              {activeTab === 'products' && <ProductsMaintenance />}
+              {activeTab === 'settings' && <SettingsMaintenance t={t} />}
+              {activeTab === 'products' && <ProductsMaintenance t={t} />}
             </div>
           </div>
         </div>

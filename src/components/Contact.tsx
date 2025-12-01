@@ -33,7 +33,7 @@ export function Contact({ t }: ContactProps) {
                     <MapPin className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="mb-1">Address</h3>
+                    <h3 className="mb-1">{t.contact.addressLabel}</h3>
                     <p className="text-gray-600">{settings?.address || t.contact.address}</p>
                   </div>
                 </div>
@@ -43,8 +43,8 @@ export function Contact({ t }: ContactProps) {
                     <Phone className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="mb-1">Phone</h3>
-                    <p className="text-gray-600">{settings?.phone || t.contact.phone.replace('Phone: ', '')}</p>
+                    <h3 className="mb-1">{t.contact.phoneLabel}</h3>
+                    <p className="text-gray-600">{settings?.phone || t.contact.phone.replace('Phone: ', '').replace('Teléfono: ', '')}</p>
                   </div>
                 </div>
 
@@ -53,7 +53,7 @@ export function Contact({ t }: ContactProps) {
                     <Mail className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="mb-1">Email</h3>
+                    <h3 className="mb-1">{t.contact.emailLabel}</h3>
                     <p className="text-gray-600">{settings?.email || t.contact.email.replace('Email: ', '').replace('Correo: ', '')}</p>
                   </div>
                 </div>
@@ -63,7 +63,7 @@ export function Contact({ t }: ContactProps) {
                     <Clock className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="mb-1">Hours</h3>
+                    <h3 className="mb-1">{t.contact.hoursLabel}</h3>
                     <p className="text-gray-600">{settings?.hours || t.contact.hours.replace('Hours: ', '').replace('Horario: ', '')}</p>
                   </div>
                 </div>

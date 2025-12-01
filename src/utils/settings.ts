@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 export interface BusinessSettings {
+  id: number;
   email: string;
   phone: string;
   address: string;
@@ -11,6 +12,7 @@ export interface BusinessSettings {
 }
 
 export const defaultSettings: BusinessSettings = {
+  id: 6,
   email: 'info@localcycles.com',
   phone: 'd(555) 123-4567',
   address: 'd123 Bike Street, Cycle City, Country',
@@ -25,7 +27,7 @@ export async function getSettings(): Promise<BusinessSettings> {
     const { data, error } = await supabase
       .from('Settings')
       .select('Email, Phone, Address, BusinessName, MapLocation, OnlinePassword')
-      .eq('Email', defaultSettings.email)
+      .eq('Id', defaultSettings.id)
       .single();
 
     if (error) {
@@ -47,6 +49,7 @@ export async function getSettings(): Promise<BusinessSettings> {
     }
 
     return {
+      id: defaultSettings.id,
       email: (data.Email as string) ?? defaultSettings.email,
       phone: (data.Phone as string) ?? defaultSettings.phone,
       address: (data.Address as string) ?? defaultSettings.address,
