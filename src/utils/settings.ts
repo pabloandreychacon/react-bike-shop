@@ -9,6 +9,7 @@ export interface BusinessSettings {
   latitude: number;
   longitude: number;
   onlinePassword: string;
+  currencyCode: string;
 }
 
 export const defaultSettings: BusinessSettings = {
@@ -19,14 +20,15 @@ export const defaultSettings: BusinessSettings = {
   name: 'dRenacer Bike Shop',
   latitude: 10.007725,
   longitude: -84.099413,
-  onlinePassword: 'd'
+  onlinePassword: 'd',
+  currencyCode: '$'
 };
 
 export async function getSettings(): Promise<BusinessSettings> {
   try {
     const { data, error } = await supabase
       .from('Settings')
-      .select('Email, Phone, Address, BusinessName, MapLocation, OnlinePassword')
+      .select('Email, Phone, Address, BusinessName, MapLocation, OnlinePassword, CurrencyCode')
       .eq('Id', defaultSettings.id)
       .single();
 
@@ -56,7 +58,8 @@ export async function getSettings(): Promise<BusinessSettings> {
       name: (data.BusinessName as string) ?? defaultSettings.name,
       latitude,
       longitude,
-      onlinePassword: (data.OnlinePassword as string) ?? defaultSettings.onlinePassword
+      onlinePassword: (data.OnlinePassword as string) ?? defaultSettings.onlinePassword,
+      currencyCode: (data.CurrencyCode as string) ?? defaultSettings.currencyCode
     };
   } catch (err) {
     console.error('getSettings unexpected error', err);

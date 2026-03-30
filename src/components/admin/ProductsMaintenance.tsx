@@ -25,6 +25,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [currencyCode, setCurrencyCode] = useState('$');
 
   useEffect(() => {
     loadProducts();
@@ -34,6 +35,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     setLoading(true);
     try {
       const settings = await getSettings();
+      setCurrencyCode(settings.currencyCode || '$');
       const { data, error } = await supabase
         .from('Products')
         .select('*')
@@ -50,29 +52,79 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     }
   };
 
-  const handleSave = async (product: Product) => {
+  const handleSave = async (product: Product, newImages: File[] = [], imagesToDelete: string[] = []) => {
     try {
+      setLoading(true);
       const settings = await getSettings();
       const productData = { ...product, IdBusiness: settings.id, BusinessEmail: settings.email };
 
-      if (product.Id) {
-        const { error } = await supabase
+      let productId = product.Id;
+
+      if (!productId) {
+        const { data, error } = await supabase
           .from('Products')
-          .update(productData)
-          .eq('Id', product.Id);
+          .insert(productData)
+          .select('Id')
+          .single();
         if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('Products')
-          .insert(productData);
-        if (error) throw error;
+        productId = data.Id;
       }
+
+      let currentImageUrls: string[] = [];
+      try {
+        if (productData.ImageUrl && productData.ImageUrl.startsWith('[')) {
+          currentImageUrls = JSON.parse(productData.ImageUrl);
+        } else if (productData.ImageUrl) {
+          currentImageUrls = [productData.ImageUrl];
+        }
+      } catch (e) {
+        if (productData.ImageUrl) currentImageUrls = [productData.ImageUrl];
+      }
+
+      currentImageUrls = currentImageUrls.filter(url => !imagesToDelete.includes(url));
+
+      for (const url of imagesToDelete) {
+        const parts = url.split('/postore/');
+        if (parts.length > 1) {
+          const path = parts[1];
+          await supabase.storage.from('postore').remove([path]);
+        }
+      }
+
+      for (const file of newImages) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${settings.id}/${productId}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('postore')
+          .upload(filePath, file);
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage
+          .from('postore')
+          .getPublicUrl(filePath);
+          
+        currentImageUrls.push(publicUrlData.publicUrl);
+      }
+
+      const finalImageUrl = currentImageUrls.length > 0 ? JSON.stringify(currentImageUrls) : '';
+      
+      const { error: updateError } = await supabase
+        .from('Products')
+        .update({ ...productData, ImageUrl: finalImageUrl })
+        .eq('Id', productId);
+      
+      if (updateError) throw updateError;
 
       await loadProducts();
       setEditingProduct(null);
       setIsCreating(false);
     } catch (err) {
       console.error('Error saving product:', err);
+      alert('Error guardando producto: ' + (err as Error).message);
+      setLoading(false);
     }
   };
 
@@ -92,16 +144,26 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     }
   };
 
+  const getAllImages = (urlStr: string) => {
+    try {
+      if (urlStr?.startsWith('[')) {
+        return JSON.parse(urlStr) as string[];
+      }
+      return urlStr ? [urlStr] : [];
+    } catch (e) {
+      return urlStr ? [urlStr] : [];
+    }
+  };
+
   const ProductForm = ({ product, onSave, onCancel }: {
     product: Product;
-    onSave: (product: Product) => void;
+    onSave: (product: Product, newImages: File[], imagesToDelete: string[]) => void;
     onCancel: () => void;
   }) => {
     const [formData, setFormData] = useState({
       Name: product?.Name || '',
       Description: product?.Description || '',
       Price: product?.Price || 0,
-
       ImageUrl: product?.ImageUrl || '',
       IsService: product?.IsService || false,
       Active: product?.Active ?? true,
@@ -109,6 +171,47 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       BusinessEmail: product?.BusinessEmail || '',
       ...(product?.Id && { Id: product.Id })
     });
+
+    const [existingImages, setExistingImages] = useState<string[]>(() => {
+      try {
+        if (product?.ImageUrl?.startsWith('[')) {
+          return JSON.parse(product.ImageUrl);
+        } else if (product?.ImageUrl) {
+          return [product.ImageUrl];
+        }
+      } catch (e) {}
+      return [];
+    });
+    
+    const [newFiles, setNewFiles] = useState<File[]>([]);
+    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        const filesToAdd = Array.from(e.target.files);
+        
+        const overSizeFiles = filesToAdd.filter(file => file.size > 1024 * 1024);
+        if (overSizeFiles.length > 0) {
+          alert("Una o más imágenes superan el tamaño máximo de 1MB. Por favor, selecciona imágenes más ligeras.");
+          return;
+        }
+
+        if (existingImages.length + newFiles.length + filesToAdd.length > 5) {
+          alert("Solo puedes subir un máximo de 5 imágenes.");
+          return;
+        }
+        setNewFiles([...newFiles, ...filesToAdd]);
+      }
+    };
+
+    const removeExistingImage = (url: string) => {
+      setExistingImages(existingImages.filter(img => img !== url));
+      setImagesToDelete([...imagesToDelete, url]);
+    };
+
+    const removeNewFile = (index: number) => {
+      setNewFiles(newFiles.filter((_, i) => i !== index));
+    };
 
     return (
       <div className="bg-gray-50 p-4 rounded-lg">
@@ -132,14 +235,34 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.imageUrl}</label>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes (Máx 5)</label>
             <input
-              type="url"
-              value={formData.ImageUrl}
-              onChange={(e) => setFormData({ ...formData, ImageUrl: e.target.value })}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+              disabled={existingImages.length + newFiles.length >= 5}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <div className="flex gap-4 mt-4 flex-wrap">
+              {existingImages.map((url, i) => (
+                <div key={i} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
+                  <img src={url} alt="Product" className="w-full h-full object-cover" />
+                  <button onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              {newFiles.map((file, i) => (
+                <div key={`new-${i}`} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
+                  <img src={URL.createObjectURL(file)} alt="New Product" className="w-full h-full object-cover opacity-70" />
+                  <button onClick={() => removeNewFile(i)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.description}</label>
@@ -182,7 +305,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             {t.products.cancel}
           </button>
           <button
-            onClick={() => onSave(formData)}
+            onClick={() => onSave(formData, newFiles, imagesToDelete)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
           >
             <Save className="w-4 h-4 inline mr-1" />
@@ -237,7 +360,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
         ) : (
           products.map((product) => (
             <div key={product.Id} className="bg-white border border-gray-200 rounded-lg p-4">
-              {editingProduct?.Id === product.Id ? (
+              {editingProduct?.Id === product.Id && editingProduct ? (
                 <ProductForm
                   product={editingProduct}
                   onSave={handleSave}
@@ -253,15 +376,28 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                         {product.IsService ? t.products.service : t.products.product}
                       </span>
 
-                      <span className="text-sm font-medium text-green-600">${product.Price}</span>
+                      <span className="text-sm font-medium text-green-600">{currencyCode}{product.Price}</span>
                       <span className={`px-2 py-1 text-xs rounded-full ${product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                         }`}>
                         {product.Active ? t.products.active : t.products.inactive}
                       </span>
                     </div>
-                    <p className="text-gray-600 text-sm px-4 py-4">{product.Description}</p>
+                    <p className="text-gray-600 text-sm px-4 pt-0 pb-4">{product.Description}</p>
+                    
+                    {getAllImages(product.ImageUrl).length > 0 && (
+                      <div className="flex gap-2 px-4 pb-4">
+                        {getAllImages(product.ImageUrl).map((imgUrl, i) => (
+                          <img 
+                            key={i} 
+                            src={imgUrl} 
+                            alt={`${product.Name} ${i+1}`} 
+                            className="w-16 h-16 rounded-lg object-cover border border-gray-200" 
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 ml-4 mt-4 mr-4">
                     <button
                       onClick={() => setEditingProduct(product)}
                       className="p-2 text-gray-400 hover:text-blue-600"

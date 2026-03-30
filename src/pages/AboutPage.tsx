@@ -6,7 +6,7 @@ interface AboutPageProps {
 
 export function AboutPage({ t }: AboutPageProps) {
   return (
-    <div className="pt-20">
+    <div>
       <About t={t} />
     </div>
   );

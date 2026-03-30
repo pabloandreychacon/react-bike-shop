@@ -6,7 +6,7 @@ interface ContactPageProps {
 
 export function ContactPage({ t }: ContactPageProps) {
   return (
-    <div className="pt-20">
+    <div>
       <Contact t={t} />
     </div>
   );

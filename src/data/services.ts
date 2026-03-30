@@ -8,6 +8,7 @@ export interface Service {
   title: string;
   description: string;
   price: string;
+  image?: string;
 }
 
 export async function getServicesFromSupabase(language: Language = 'en'): Promise<Service[]> {
@@ -30,7 +31,8 @@ export async function getServicesFromSupabase(language: Language = 'en'): Promis
       id: product.Id?.toString() || '',
       title: parseBilingualText(product.Name || '', language),
       description: parseBilingualText(product.Description || '', language),
-      price: product.Price ? `$${product.Price}` : 'Free'
+      price: product.Price ? `${settings.currencyCode || '$'}${product.Price}` : 'Free',
+      image: product.ImageUrl || undefined
     })) || [];
   } catch (err) {
     console.error('Unexpected error fetching services:', err);

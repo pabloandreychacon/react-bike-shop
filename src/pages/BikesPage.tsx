@@ -8,7 +8,7 @@ interface BikesPageProps {
 
 export function BikesPage({ t, language = 'en' }: BikesPageProps) {
   return (
-    <div className="pt-20">
+    <div>
       <BikeGallery t={t} language={language} />
     </div>
   );

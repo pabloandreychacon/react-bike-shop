@@ -43,7 +43,7 @@ export const translations = {
       address: '123 Bike Street, Cycle City',
       phone: 'Phone: (555) 123-4567',
       email: 'Email: info@localcycles.com',
-      hours: 'Hours: Mon-Sat 9AM-6PM',
+      hours: 'Hours: Mon-Sat 10AM-6PM',
     },
 
 
@@ -153,7 +153,7 @@ export const translations = {
       address: 'Calle Bicicleta 123, Ciudad Ciclista',
       phone: 'Teléfono: (555) 123-4567',
       email: 'Correo: info@localcycles.com',
-      hours: 'Horario: Lun-Sáb 9AM-6PM',
+      hours: 'Horario: Lun-Sáb 10AM-6PM',
     },
 
 

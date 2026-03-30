@@ -10,6 +10,7 @@ export interface Bike {
   price: number;
   description: string;
   image: string;
+  currency?: string;
 }
 
 export async function getBikesFromSupabase(language: Language = 'en'): Promise<Bike[]> {
@@ -34,7 +35,8 @@ export async function getBikesFromSupabase(language: Language = 'en'): Promise<B
       type: product.Category || '',
       price: product.Price || 0,
       description: parseBilingualText(product.Description || '', language),
-      image: product.ImageUrl || ''
+      image: product.ImageUrl || '',
+      currency: settings.currencyCode || '$'
     })) || [];
   } catch (err) {
     console.error('Unexpected error fetching bikes:', err);

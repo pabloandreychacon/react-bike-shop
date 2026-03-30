@@ -1,5 +1,6 @@
 import { Wrench, Settings, Zap, Shield } from 'lucide-react';
 import { services, getServicesFromSupabase, Service } from '../data/services';
+import { getSettings } from '../utils/settings';
 import { Language } from '../utils/i18n';
 import { useEffect, useState } from 'react';
 
@@ -12,6 +13,19 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
   const serviceData = services[language];
   const [servicesList, setServicesList] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getFirstImage = (urlStr?: string) => {
+    if (!urlStr) return null;
+    try {
+      if (urlStr.startsWith('[')) {
+        const parsed = JSON.parse(urlStr);
+        return parsed[0] || null;
+      }
+      return urlStr || null;
+    } catch {
+      return urlStr;
+    }
+  };
 
   const defaultServices = [
     {
@@ -43,15 +57,23 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
   useEffect(() => {
     const fetchServices = async () => {
       setLoading(true);
+      const settings = await getSettings();
+      const currency = settings.currencyCode || '$';
+      
+      const defaultServicesWithCurrency = defaultServices.map(s => ({
+        ...s,
+        price: s.price.replace('$', currency)
+      }));
+
       const data = await getServicesFromSupabase(language);
-      setServicesList(data.length > 0 ? data : defaultServices);
+      setServicesList(data.length > 0 ? data : defaultServicesWithCurrency);
       setLoading(false);
     };
     fetchServices();
   }, [serviceData, language]);
 
   return (
-    <div className="pt-20">
+    <div>
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -66,12 +88,20 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
               </div>
             ) : servicesList.length > 0 ? (
               servicesList.map((service, index) => {
-                const icons = [<Wrench key="wrench" className="w-12 h-12 text-blue-600" />, <Settings key="settings" className="w-12 h-12 text-blue-600" />, <Zap key="zap" className="w-12 h-12 text-blue-600" />, <Shield key="shield" className="w-12 h-12 text-blue-600" />];
+                const icons = [<Wrench key="wrench" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Settings key="settings" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Zap key="zap" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />];
                 return (
                   <div key={service.id || `service-${index}`} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow">
-                    <div className="flex items-start gap-4">
-                      <div className="shrink-0">
-                        {icons[index % icons.length]}
+                    <div className="flex items-start gap-6 md:gap-8">
+                      <div className="shrink-0 flex items-center justify-center p-1">
+                        {getFirstImage(service.image) ? (
+                          <img 
+                            src={getFirstImage(service.image)} 
+                            alt={service.title} 
+                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100" 
+                          />
+                        ) : (
+                          icons[index % icons.length]
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
