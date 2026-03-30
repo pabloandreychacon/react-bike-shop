@@ -1,5 +1,5 @@
 import { Bike } from '../data/bikes';
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface BikeCardProps {
@@ -10,16 +10,21 @@ interface BikeCardProps {
 export function BikeCard({ bike, bikesData }: BikeCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  let images: string[] = [];
-  try {
-    if (bike.image?.startsWith('[')) {
-      images = JSON.parse(bike.image);
-    } else if (bike.image) {
-      images = [bike.image];
+  const images = useMemo<string[]>(() => {
+    try {
+      const imageField = bike.image;
+      if (!imageField) return [];
+
+      if (imageField.startsWith('[')) {
+        const parsed = JSON.parse(imageField);
+        return Array.isArray(parsed) ? (parsed as string[]).filter(Boolean) : [];
+      }
+
+      return [imageField];
+    } catch {
+      return bike.image ? [bike.image] : [];
     }
-  } catch (e) {
-    if (bike.image) images = [bike.image];
-  }
+  }, [bike.image]);
 
   const [isHovered, setIsHovered] = useState(false);
 
@@ -44,7 +49,7 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
   };
 
   return (
-    <div 
+    <div
       className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -59,13 +64,13 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
             />
             {images.length > 1 && (
               <>
-                <button 
+                <button
                   onClick={prevImage}
                   className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 z-10"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={nextImage}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 z-10"
                 >
@@ -73,8 +78,8 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
                 </button>
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                   {images.map((_, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === currentIndex ? 'bg-white' : 'bg-white/50'}`}
                     />
                   ))}
