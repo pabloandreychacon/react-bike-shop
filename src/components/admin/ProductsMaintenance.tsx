@@ -95,27 +95,27 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `${settings.id}/${productId}/${fileName}`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('postore')
           .upload(filePath, file);
-        
+
         if (uploadError) throw uploadError;
-        
+
         const { data: publicUrlData } = supabase.storage
           .from('postore')
           .getPublicUrl(filePath);
-          
+
         currentImageUrls.push(publicUrlData.publicUrl);
       }
 
       const finalImageUrl = currentImageUrls.length > 0 ? JSON.stringify(currentImageUrls) : '';
-      
+
       const { error: updateError } = await supabase
         .from('Products')
         .update({ ...productData, ImageUrl: finalImageUrl })
         .eq('Id', productId);
-      
+
       if (updateError) throw updateError;
 
       await loadProducts();
@@ -179,17 +179,17 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
         } else if (product?.ImageUrl) {
           return [product.ImageUrl];
         }
-      } catch (e) {}
+      } catch (e) { }
       return [];
     });
-    
+
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
         const filesToAdd = Array.from(e.target.files);
-        
+
         const overSizeFiles = filesToAdd.filter(file => file.size > 1024 * 1024);
         if (overSizeFiles.length > 0) {
           alert("Una o más imágenes superan el tamaño máximo de 1MB. Por favor, selecciona imágenes más ligeras.");
@@ -367,37 +367,38 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                   onCancel={() => setEditingProduct(null)}
                 />
               ) : (
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
                   <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2 px-4 py-4">
-                      <h3 className="text-lg font-medium">{product.Name}</h3>
-                      <span className={`px-2 py-1 text-xs rounded-full ${product.IsService ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {product.IsService ? t.products.service : t.products.product}
-                      </span>
-
-                      <span className="text-sm font-medium text-green-600">{currencyCode}{product.Price}</span>
-                      <span className={`px-2 py-1 text-xs rounded-full ${product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                        {product.Active ? t.products.active : t.products.inactive}
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 px-4 py-4">
+                      <h3 className="text-lg font-medium flex-1">{product.Name}</h3>
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <span className={`px-2 py-1 text-xs rounded-full ${product.IsService ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {product.IsService ? t.products.service : t.products.product}
+                        </span>
+                        <span className="text-sm font-medium text-green-600">{currencyCode}{product.Price}</span>
+                        <span className={`px-2 py-1 text-xs rounded-full ${product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                          {product.Active ? t.products.active : t.products.inactive}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-gray-600 text-sm px-4 pt-0 pb-4">{product.Description}</p>
-                    
+
                     {getAllImages(product.ImageUrl).length > 0 && (
                       <div className="flex gap-2 px-4 pb-4">
                         {getAllImages(product.ImageUrl).map((imgUrl, i) => (
-                          <img 
-                            key={i} 
-                            src={imgUrl} 
-                            alt={`${product.Name} ${i+1}`} 
-                            className="w-16 h-16 rounded-lg object-cover border border-gray-200" 
+                          <img
+                            key={i}
+                            src={imgUrl}
+                            alt={`${product.Name} ${i + 1}`}
+                            className="w-16 h-16 rounded-lg object-cover border border-gray-200"
                           />
                         ))}
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-4 mt-4 mr-4">
+                  <div className="flex gap-2 self-end sm:self-start sm:ml-4 sm:mt-4 mt-2">
                     <button
                       onClick={() => setEditingProduct(product)}
                       className="p-2 text-gray-400 hover:text-blue-600"
