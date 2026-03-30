@@ -28,6 +28,11 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
 
   const [isHovered, setIsHovered] = useState(false);
 
+  // If the bike changes, restart the carousel at the first image.
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [bike.image]);
+
   useEffect(() => {
     if (images.length <= 1 || isHovered) return;
 
@@ -36,14 +41,14 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [images.length, isHovered]);
+  }, [images.length, isHovered, bike.image]);
 
-  const prevImage = (e: React.MouseEvent) => {
+  const prevImage = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   };
 
-  const nextImage = (e: React.MouseEvent) => {
+  const nextImage = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
@@ -54,7 +59,7 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="aspect-[4/3] overflow-hidden relative group">
+      <div className="aspect-4/3 overflow-hidden relative group">
         {images.length > 0 ? (
           <>
             <img
