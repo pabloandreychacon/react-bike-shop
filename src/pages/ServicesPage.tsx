@@ -90,20 +90,23 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
               servicesList.map((service, index) => {
                 const icons = [<Wrench key="wrench" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Settings key="settings" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Zap key="zap" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />];
                 return (
-                  <div key={service.id || `service-${index}`} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow">
-                    <div className="flex items-start gap-6 md:gap-8">
-                      <div className="shrink-0 flex items-center justify-center p-1">
+                  <div
+                    key={service.id || `service-${index}`}
+                    className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+                  >
+                    <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
+                      <div className="w-full lg:w-auto flex justify-center lg:justify-start">
                         {getFirstImage(service.image) ? (
-                          <img 
-                            src={getFirstImage(service.image)} 
-                            alt={service.title} 
-                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100" 
+                          <img
+                            src={getFirstImage(service.image)}
+                            alt={service.title}
+                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
                           />
                         ) : (
                           icons[index % icons.length]
                         )}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 text-center lg:text-left mt-4 lg:mt-0">
                         <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
                         <p className="text-gray-600 mb-4">{service.description}</p>
                         <div className="text-2xl font-bold text-blue-600">{service.price}</div>
