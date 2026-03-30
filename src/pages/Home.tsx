@@ -17,6 +17,19 @@ export function Home({ t, language = 'en' }: HomeProps) {
   const servicesData = services[language];
   const [servicesList, setServicesList] = useState<Service[]>([]);
 
+  const getFirstImage = (urlStr?: string) => {
+    if (!urlStr) return null;
+    try {
+      if (urlStr.startsWith('[')) {
+        const parsed = JSON.parse(urlStr);
+        return parsed[0] || null;
+      }
+      return urlStr || null;
+    } catch {
+      return urlStr;
+    }
+  };
+
   const defaultServices = [
     {
       id: '1',
@@ -67,14 +80,31 @@ export function Home({ t, language = 'en' }: HomeProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {servicesList.map((service, index) => {
-              const icons = [<Wrench className="w-12 h-12 text-blue-600" />, <Settings className="w-12 h-12 text-blue-600" />, <Zap className="w-12 h-12 text-blue-600" />, <Shield className="w-12 h-12 text-blue-600" />];
+              const icons = [
+                <Wrench key="wrench" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />,
+                <Settings key="settings" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />,
+                <Zap key="zap" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />,
+                <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />
+              ];
+
               return (
-                <div key={service.id} className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="shrink-0">
-                      {icons[index % icons.length]}
+                <div
+                  key={service.id || `service-${index}`}
+                  className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
+                    <div className="w-full lg:w-auto flex justify-center lg:justify-start">
+                      {getFirstImage(service.image) ? (
+                        <img
+                          src={getFirstImage(service.image) as string}
+                          alt={service.title}
+                          className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
+                        />
+                      ) : (
+                        icons[index % icons.length]
+                      )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 text-center lg:text-left mt-4 lg:mt-0">
                       <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
                       <p className="text-gray-600 mb-4">{service.description}</p>
                       <div className="text-2xl font-bold text-blue-600">{service.price}</div>
