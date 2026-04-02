@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getSettings } from '../../utils/settings';
+import { joinBilingualText, splitBilingualText } from '../../utils/bilingual';
 
 interface Product {
   Id?: number;
@@ -160,9 +161,14 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     onSave: (product: Product, newImages: File[], imagesToDelete: string[]) => void;
     onCancel: () => void;
   }) => {
+    const initialName = splitBilingualText(product?.Name || '');
+    const initialDesc = splitBilingualText(product?.Description || '');
+    const [nameEs, setNameEs] = useState(initialName.es);
+    const [nameEn, setNameEn] = useState(initialName.en);
+    const [descEs, setDescEs] = useState(initialDesc.es);
+    const [descEn, setDescEn] = useState(initialDesc.en);
+
     const [formData, setFormData] = useState({
-      Name: product?.Name || '',
-      Description: product?.Description || '',
       Price: product?.Price || 0,
       ImageUrl: product?.ImageUrl || '',
       IsService: product?.IsService || false,
@@ -171,6 +177,15 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       BusinessEmail: product?.BusinessEmail || '',
       ...(product?.Id && { Id: product.Id })
     });
+
+    useEffect(() => {
+      const n = splitBilingualText(product?.Name || '');
+      const d = splitBilingualText(product?.Description || '');
+      setNameEs(n.es);
+      setNameEn(n.en);
+      setDescEs(d.es);
+      setDescEn(d.en);
+    }, [product?.Id]);
 
     const [existingImages, setExistingImages] = useState<string[]>(() => {
       try {
@@ -213,20 +228,35 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       setNewFiles(newFiles.filter((_, i) => i !== index));
     };
 
+    const buildProductForSave = (): Product => ({
+      ...formData,
+      Name: joinBilingualText(nameEs, nameEn),
+      Description: joinBilingualText(descEs, descEn),
+    });
+
     return (
       <div className="bg-gray-50 p-4 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.name}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.nameSpanish}</label>
             <input
               type="text"
-              value={formData.Name}
-              onChange={(e) => setFormData({ ...formData, Name: e.target.value })}
+              value={nameEs}
+              onChange={(e) => setNameEs(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.nameEnglish}</label>
+            <input
+              type="text"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.price}</label>
             <input
               type="number"
@@ -265,10 +295,19 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             </div>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.description}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.descriptionSpanish}</label>
             <textarea
-              value={formData.Description}
-              onChange={(e) => setFormData({ ...formData, Description: e.target.value })}
+              value={descEs}
+              onChange={(e) => setDescEs(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.descriptionEnglish}</label>
+            <textarea
+              value={descEn}
+              onChange={(e) => setDescEn(e.target.value)}
               rows={3}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -305,7 +344,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             {t.products.cancel}
           </button>
           <button
-            onClick={() => onSave(formData, newFiles, imagesToDelete)}
+            onClick={() => onSave(buildProductForSave(), newFiles, imagesToDelete)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
           >
             <Save className="w-4 h-4 inline mr-1" />
@@ -336,6 +375,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       {isCreating && (
         <div className="mb-6">
           <ProductForm
+            key="new-product"
             product={{
               Name: '',
               Description: '',
@@ -358,10 +398,17 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             {t.products.noProducts}
           </div>
         ) : (
-          products.map((product) => (
+          products.map((product) => {
+            const nameParts = splitBilingualText(product.Name || '');
+            const descParts = splitBilingualText(product.Description || '');
+            const titlePrimary = nameParts.es || nameParts.en || product.Name;
+            const altLabel = (titlePrimary || 'Product').trim();
+
+            return (
             <div key={product.Id} className="bg-white border border-gray-200 rounded-lg p-4">
               {editingProduct?.Id === product.Id && editingProduct ? (
                 <ProductForm
+                  key={editingProduct.Id}
                   product={editingProduct}
                   onSave={handleSave}
                   onCancel={() => setEditingProduct(null)}
@@ -370,7 +417,12 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 px-4 py-4">
-                      <h3 className="text-lg font-medium flex-1">{product.Name}</h3>
+                      <h3 className="text-lg font-medium flex-1">
+                        {titlePrimary}
+                        {nameParts.es && nameParts.en ? (
+                          <span className="block text-sm font-normal text-gray-500 mt-0.5">{nameParts.en}</span>
+                        ) : null}
+                      </h3>
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <span className={`px-2 py-1 text-xs rounded-full ${product.IsService ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
                           }`}>
@@ -383,7 +435,12 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                         </span>
                       </div>
                     </div>
-                    <p className="text-gray-600 text-sm px-4 pt-0 pb-4">{product.Description}</p>
+                    <div className="text-gray-600 text-sm px-4 pt-0 pb-4 space-y-1">
+                      <p>{descParts.es || descParts.en || product.Description}</p>
+                      {descParts.es && descParts.en ? (
+                        <p className="text-gray-500 text-xs">{descParts.en}</p>
+                      ) : null}
+                    </div>
 
                     {getAllImages(product.ImageUrl).length > 0 && (
                       <div className="flex gap-2 px-4 pb-4">
@@ -391,7 +448,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                           <img
                             key={i}
                             src={imgUrl}
-                            alt={`${product.Name} ${i + 1}`}
+                            alt={`${altLabel} ${i + 1}`}
                             className="w-16 h-16 rounded-lg object-cover border border-gray-200"
                           />
                         ))}
@@ -415,7 +472,8 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
