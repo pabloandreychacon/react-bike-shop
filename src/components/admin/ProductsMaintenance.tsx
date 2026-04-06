@@ -12,6 +12,7 @@ interface Product {
   CategoryId?: number;
   ImageUrl: string;
   IsService: boolean;
+  IsOffer?: boolean;
   Active: boolean;
   IdBusiness: number;
   BusinessEmail?: string;
@@ -172,6 +173,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       Price: product?.Price || 0,
       ImageUrl: product?.ImageUrl || '',
       IsService: product?.IsService || false,
+      IsOffer: product?.IsOffer || false,
       Active: product?.Active ?? true,
       IdBusiness: product?.IdBusiness || 0,
       BusinessEmail: product?.BusinessEmail || '',
@@ -327,6 +329,17 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             <label className="flex items-center">
               <input
                 type="checkbox"
+                checked={formData.IsOffer}
+                onChange={(e) => setFormData({ ...formData, IsOffer: e.target.checked })}
+                className="mr-2"
+              />
+              <span className="text-sm font-medium text-gray-700">{t.products.isOffer}</span>
+            </label>
+          </div>
+          <div>
+            <label className="flex items-center">
+              <input
+                type="checkbox"
                 checked={formData.Active}
                 onChange={(e) => setFormData({ ...formData, Active: e.target.checked })}
                 className="mr-2"
@@ -382,6 +395,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
               Price: 0,
               ImageUrl: '',
               IsService: false,
+              IsOffer: false,
               Active: true,
               IdBusiness: 0,
               BusinessEmail: ''
@@ -428,6 +442,11 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                           }`}>
                           {product.IsService ? t.products.service : t.products.product}
                         </span>
+                        {product.IsOffer && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                            {t.products.offer}
+                          </span>
+                        )}
                         <span className="text-sm font-medium text-green-600">{currencyCode}{product.Price}</span>
                         <span className={`px-2 py-1 text-xs rounded-full ${product.Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>

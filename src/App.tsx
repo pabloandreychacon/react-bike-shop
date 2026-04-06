@@ -10,6 +10,7 @@ import { ServicesPage } from "./pages/ServicesPage";
 import { AboutPage } from "./pages/AboutPage";
 import { ContactPage } from "./pages/ContactPage";
 import { AdminPage } from "./pages/AdminPage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { useTranslation, Language } from "./utils/i18n";
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
             element={<ContactPage t={t} />}
           />
           <Route path="/admin" element={<AdminPage t={t} />} />
+          <Route path="/product/:id" element={<ProductDetailPage t={t} language={language} />} />
         </Routes>
         <Footer t={t} />
         <GoToTop />

@@ -67,7 +67,7 @@ export function Home({ t, language = 'en' }: HomeProps) {
 
   return (
     <div>
-      <Hero t={t} />
+      <Hero t={t} language={language} />
 
       <BikeGallery t={t} language={language} />
 
@@ -87,11 +87,12 @@ export function Home({ t, language = 'en' }: HomeProps) {
                 <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />
               ];
 
-              return (
-                <div
-                  key={service.id || `service-${index}`}
-                  className="bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
-                >
+                return (
+                  <Link
+                    to={`/product/${service.id}`}
+                    key={service.id || `service-${index}`}
+                    className="block bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+                  >
                   <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
                     <div className="w-full lg:w-auto flex justify-center lg:justify-start">
                       {getFirstImage(service.image) ? (
@@ -110,7 +111,7 @@ export function Home({ t, language = 'en' }: HomeProps) {
                       <div className="text-2xl font-bold text-blue-600">{service.price}</div>
                     </div>
                   </div>
-                </div>
+                  </Link>
               );
             })}
           </div>

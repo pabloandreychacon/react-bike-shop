@@ -3,6 +3,7 @@ import { services, getServicesFromSupabase, Service } from '../data/services';
 import { getSettings } from '../utils/settings';
 import { Language } from '../utils/i18n';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface ServicesPageProps {
   t: any;
@@ -90,9 +91,10 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
               servicesList.map((service, index) => {
                 const icons = [<Wrench key="wrench" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Settings key="settings" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Zap key="zap" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />, <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />];
                 return (
-                  <div
+                  <Link
+                    to={`/product/${service.id}`}
                     key={service.id || `service-${index}`}
-                    className="bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+                    className="block bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
                   >
                     <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
                       <div className="w-full lg:w-auto flex justify-center lg:justify-start">
@@ -112,7 +114,7 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
                         <div className="text-2xl font-bold text-blue-600">{service.price}</div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             ) : (

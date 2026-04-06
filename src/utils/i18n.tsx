@@ -14,6 +14,7 @@ export const translations = {
       subtitle: 'Your local bicycle shop with premium quality bikes and expert service',
       cta: 'Explore Bikes',
       servicesCta: 'Explore Services',
+      viewOffer: 'View Offer',
     },
 
     about: {
@@ -82,8 +83,10 @@ export const translations = {
       price: 'Price',
       imageUrl: 'Image URL',
       isService: 'Is Service',
+      isOffer: 'Is Offer',
       active: 'Active',
       service: 'Service',
+      offer: 'Offer',
       product: 'Product',
       inactive: 'Inactive',
       save: 'Save',
@@ -128,6 +131,7 @@ export const translations = {
       subtitle: 'Tu tienda local de bicicletas con calidad premium y servicio experto',
       cta: 'Explorar Bicicletas',
       servicesCta: 'Explorar Servicios',
+      viewOffer: 'Ver Oferta',
     },
 
     about: {
@@ -196,8 +200,10 @@ export const translations = {
       price: 'Precio',
       imageUrl: 'URL de Imagen',
       isService: 'Es Servicio',
+      isOffer: 'Es Oferta',
       active: 'Activo',
       service: 'Servicio',
+      offer: 'Oferta',
       product: 'Producto',
       inactive: 'Inactivo',
       save: 'Guardar',

@@ -1,6 +1,7 @@
 import { Bike } from '../data/bikes';
 import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface BikeCardProps {
   bike: Bike;
@@ -54,8 +55,9 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
   };
 
   return (
-    <div
-      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+    <Link
+      to={`/product/${bike.id}`}
+      className="block bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -107,6 +109,6 @@ export function BikeCard({ bike, bikesData }: BikeCardProps) {
         <p className="text-gray-700 mb-4">{bike.description}</p>
 
       </div>
-    </div>
+    </Link>
   );
 }
