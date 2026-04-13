@@ -134,12 +134,26 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     if (!confirm(t.products.confirmDelete)) return;
 
     try {
+      const product = products.find(p => p.Id === id);
+
       const { error } = await supabase
         .from('Products')
         .delete()
         .eq('Id', id);
 
       if (error) throw error;
+
+      // Delete all images from storage
+      if (product?.ImageUrl) {
+        const urls = getAllImages(product.ImageUrl);
+        const paths = urls
+          .map(url => url.split('/postore/').at(1))
+          .filter(Boolean) as string[];
+
+        if (paths.length > 0)
+          await supabase.storage.from('postore').remove(paths);
+      }
+
       await loadProducts();
     } catch (err) {
       console.error('Error deleting product:', err);
