@@ -227,8 +227,8 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
           return;
         }
 
-        if (existingImages.length + newFiles.length + filesToAdd.length > 5) {
-          alert("Solo puedes subir un máximo de 5 imágenes.");
+        if (existingImages.length + newFiles.length + filesToAdd.length > 2) {
+          alert("Solo puedes subir un máximo de 2 imágenes.");
           return;
         }
         setNewFiles([...newFiles, ...filesToAdd]);
@@ -282,13 +282,13 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes (Máx 5)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes (Máx 2)</label>
             <input
               type="file"
               multiple
               accept="image/*"
               onChange={handleFileChange}
-              disabled={existingImages.length + newFiles.length >= 5}
+              disabled={existingImages.length + newFiles.length >= 2}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex gap-4 mt-4 flex-wrap">
