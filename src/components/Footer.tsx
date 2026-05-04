@@ -58,6 +58,11 @@ export function Footer({ t }: FooterProps) {
           </div>
         </div>
 
+        {/* qr code */}
+        <div className="flex justify-center">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?color=000000&amp;bgcolor=FFFFFF&amp;data=https%3A%2F%2Fciclorenacer.netlify.app%2F&amp;qzone=1&amp;margin=0&amp;size=400x400&amp;ecc=L" alt="qr code" className='w-32 h-32' />
+        </div>
+
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
           <p>© {currentYear} {settings?.name || 'Ciclo Renacer'}. {t.footer.rights}</p>
         </div>
