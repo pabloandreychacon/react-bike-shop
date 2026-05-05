@@ -6,6 +6,7 @@ import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { testimonials } from '../data/testimonials';
 import { services, getServicesFromSupabase, Service } from '../data/services';
+import { SEO, LocalBusinessSchema } from '../components/SEO';
 
 interface HomeProps {
   t: any;
@@ -67,6 +68,11 @@ export function Home({ t, language = 'en' }: HomeProps) {
 
   return (
     <div>
+      <SEO
+        title={t.hero?.title || 'Premium Bikes & Professional Services'}
+        description={t.hero?.subtitle || 'Quality bicycles for road, mountain, and city riding with expert repair services.'}
+      />
+      <LocalBusinessSchema />
       <Hero t={t} language={language} />
 
       <BikeGallery t={t} language={language} />

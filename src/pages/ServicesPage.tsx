@@ -4,6 +4,7 @@ import { getSettings } from '../utils/settings';
 import { Language } from '../utils/i18n';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { SEO } from '../components/SEO';
 
 interface ServicesPageProps {
   t: any;
@@ -75,6 +76,10 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
 
   return (
     <div>
+      <SEO
+        title="Services"
+        description="Professional bicycle repair and maintenance services. From basic tune-ups to complete overhauls."
+      />
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Language } from '../utils/i18n';
 import { splitBilingualText } from '../utils/bilingual';
 import { getSettings } from '../utils/settings';
+import { SEO } from '../components/SEO';
 
 interface ProductDetailPageProps {
   t: any;
@@ -99,6 +100,11 @@ export function ProductDetailPage({ t, language = 'en' }: ProductDetailPageProps
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
+      <SEO
+        title={title}
+        description={description}
+        image={images[0]}
+      />
       <div className="container mx-auto px-4 max-w-6xl">
         <button 
           onClick={() => navigate(-1)} 
