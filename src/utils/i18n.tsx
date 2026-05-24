@@ -70,6 +70,7 @@ export const translations = {
       authFailed: 'Authentication failed',
       settings: 'Settings',
       products: 'Products',
+      logout: 'Logout',
     },
     products: {
       title: 'Products Management',
@@ -187,6 +188,7 @@ export const translations = {
       authFailed: 'Falló la autenticación',
       settings: 'Configuración',
       products: 'Productos',
+      logout: 'Cerrar Sesión',
     },
     products: {
       title: 'Gestión de Productos',
