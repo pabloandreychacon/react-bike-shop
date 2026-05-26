@@ -11,6 +11,8 @@ export interface Bike {
   description: string;
   image: string;
   currency?: string;
+  isVideo?: boolean;
+  mediaItems?: { url: string; isVideo: boolean }[];
 }
 
 export async function getBikesFromSupabase(language: Language = 'en'): Promise<Bike[]> {
@@ -29,15 +31,40 @@ export async function getBikesFromSupabase(language: Language = 'en'): Promise<B
       return [];
     }
 
-    return data?.map(product => ({
-      id: product.Id?.toString() || '',
-      name: parseBilingualText(product.Name || '', language),
-      type: product.Category || '',
-      price: product.Price || 0,
-      description: parseBilingualText(product.Description || '', language),
-      image: product.ImageUrl || '',
-      currency: settings.currencyCode || '$'
-    })) || [];
+    const products = data || [];
+    const ids = products.map(p => p.Id).filter(Boolean);
+
+    let mediaMap: Record<number, { url: string; isVideo: boolean }[]> = {};
+    if (ids.length > 0) {
+      const { data: media } = await supabase
+        .from('ProductMedia')
+        .select('ProductId, MediaUrl, isVideo')
+        .in('ProductId', ids)
+        .eq('IdBusiness', settings.id)
+        .order('DisplayOrder', { ascending: true });
+
+      (media || []).forEach((m: any) => {
+        if (!mediaMap[m.ProductId]) mediaMap[m.ProductId] = [];
+        mediaMap[m.ProductId].push({ url: m.MediaUrl, isVideo: m.isVideo === true || m.isVideo === 'true' });
+      });
+    }
+
+    return products.map(product => {
+      const items = mediaMap[product.Id] || [];
+      const urls = items.map(i => i.url);
+      const imageStr = urls.length > 1 ? JSON.stringify(urls) : (urls[0] || product.ImageUrl || '');
+      const allVideos = items.filter(i => i.isVideo).map(i => i.url);
+      return {
+        id: product.Id?.toString() || '',
+        name: parseBilingualText(product.Name || '', language),
+        type: product.Category || '',
+        price: product.Price || 0,
+        description: parseBilingualText(product.Description || '', language),
+        image: imageStr,
+        currency: settings.currencyCode || '$',
+        mediaItems: items.length > 0 ? items : undefined
+      };
+    }) || [];
   } catch (err) {
     console.error('Unexpected error fetching bikes:', err);
     return [];

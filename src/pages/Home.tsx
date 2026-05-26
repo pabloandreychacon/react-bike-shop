@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { testimonials } from '../data/testimonials';
 import { services, getServicesFromSupabase, Service } from '../data/services';
 import { SEO, LocalBusinessSchema } from '../components/SEO';
+import { MediaCarousel } from '../components/MediaCarousel';
 
 interface HomeProps {
   t: any;
@@ -93,23 +94,36 @@ export function Home({ t, language = 'en' }: HomeProps) {
                 <Shield key="shield" className="w-16 h-16 md:w-20 md:h-20 text-blue-600" />
               ];
 
-                return (
-                  <Link
-                    to={`/product/${service.id}`}
-                    key={service.id || `service-${index}`}
-                    className="block bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
-                  >
-                  <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
-                    <div className="w-full lg:w-auto flex justify-center lg:justify-start">
-                      {getFirstImage(service.image) ? (
-                        <img
-                          src={getFirstImage(service.image) as string}
-                          alt={service.title}
-                          className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
-                        />
-                      ) : (
-                        icons[index % icons.length]
-                      )}
+              return (
+                <Link
+                  to={`/product/${service.id}`}
+                  key={service.id || `service-${index}`}
+                  className="block bg-gray-50 p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex flex-col items-start gap-4 lg:gap-8">
+                    <div className="w-full lg:w-56 flex-shrink-0">
+                      {service.mediaItems ? (
+                        <MediaCarousel items={service.mediaItems} className="w-full h-48 md:h-56 rounded-xl shadow-sm ring-1 ring-gray-100" />
+                      ) : (() => {
+                        const img = getFirstImage(service.image) as string | undefined;
+                        if (!img) return <div className="w-48 h-48 md:w-56 md:h-56 flex items-center justify-center">{icons[index % icons.length]}</div>;
+                        return /\.mp4(\?|$)/i.test(img) || /\.(webm|mov|avi|mkv)(\?|$)/i.test(img) || service.isVideo ? (
+                          <video
+                            src={img}
+                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
+                            muted
+                            autoPlay
+                            loop
+                            playsInline
+                          />
+                        ) : (
+                          <img
+                            src={img}
+                            alt={service.title}
+                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
+                          />
+                        );
+                      })()}
                     </div>
                     <div className="flex-1 text-center lg:text-left mt-4 lg:mt-0">
                       <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
@@ -117,7 +131,7 @@ export function Home({ t, language = 'en' }: HomeProps) {
                       <div className="text-2xl font-bold text-blue-600">{service.price}</div>
                     </div>
                   </div>
-                  </Link>
+                </Link>
               );
             })}
           </div>

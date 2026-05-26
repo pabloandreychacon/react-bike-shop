@@ -21,10 +21,13 @@ interface OfferProduct {
   Active: boolean;
 }
 
+const isVideo = (url: string) => /\.mp4(\?|$)/i.test(url) || /\.(webm|mov|avi|mkv)(\?|$)/i.test(url);
+
 export function Hero({ t, language = 'en' }: HeroProps) {
   const [offers, setOffers] = useState<OfferProduct[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currencyCode, setCurrencyCode] = useState('$');
+  const [offerMedia, setOfferMedia] = useState<Record<number, { url: string; isVideo: boolean }>>({});
 
   const scrollDown = () => {
     window.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
@@ -43,7 +46,29 @@ export function Hero({ t, language = 'en' }: HeroProps) {
           .eq('IsOffer', true);
 
         if (error) throw error;
-        setOffers(data || []);
+        const offersData = data || [];
+        setOffers(offersData);
+
+        const ids = offersData.map(p => p.Id).filter(Boolean);
+        if (ids.length > 0) {
+          const { data: media } = await supabase
+            .from('ProductMedia')
+            .select('ProductId, MediaUrl, isVideo')
+            .in('ProductId', ids)
+            .eq('IdBusiness', settings.id)
+            .order('DisplayOrder', { ascending: true });
+
+          const mediaMap: Record<number, { url: string; isVideo: boolean }> = {};
+          (media || []).forEach((m: any) => {
+            const pid = m.ProductId;
+            const isVid = m.isVideo === true || m.isVideo === 'true';
+            const existing = mediaMap[pid];
+            if (!existing || (isVid && !existing.isVideo)) {
+              mediaMap[pid] = { url: m.MediaUrl, isVideo: isVid };
+            }
+          });
+          setOfferMedia(mediaMap);
+        }
       } catch (err) {
         console.error('Error fetching offers:', err);
       }
@@ -68,7 +93,9 @@ export function Hero({ t, language = 'en' }: HeroProps) {
     setCurrentIndex((current) => (current === 0 ? offers.length - 1 : current - 1));
   };
 
-  const getFirstImage = (urlStr: string) => {
+  const getOfferImage = (productId: number, urlStr: string): string => {
+    const media = offerMedia[productId];
+    if (media?.url) return media.url;
     if (!urlStr) return '/bike-shop-bg.jpg';
     try {
       if (urlStr.startsWith('[')) {
@@ -81,7 +108,6 @@ export function Hero({ t, language = 'en' }: HeroProps) {
     }
   };
 
-  // If no offers, fallback to exactly what was there before
   if (offers.length === 0) {
     return (
       <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -138,17 +164,31 @@ export function Hero({ t, language = 'en' }: HeroProps) {
     <section id="home" className="relative h-screen flex items-center justify-center overflow-hidden bg-black">
       {offers.map((offer, index) => {
         const isCurrent = index === currentIndex;
-        const offerBgImage = getFirstImage(offer.ImageUrl);
+        const offerImageUrl = getOfferImage(offer.Id, offer.ImageUrl);
         return (
           <div
             key={offer.Id}
-            className={`absolute inset-0 z-0 transition-opacity duration-1000 ${isCurrent ? 'opacity-100' : 'opacity-0'}`}
-            style={{
-              backgroundImage: `url('${offerBgImage}')`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
+            className={`absolute inset-0 transition-opacity duration-1000 ${isCurrent ? 'opacity-100' : 'opacity-0'}`}
           >
+            {isVideo(offerImageUrl) || offerMedia[offer.Id]?.isVideo ? (
+              <video
+                src={offerImageUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url('${offerImageUrl}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              />
+            )}
             <div className="absolute inset-0 bg-black/60 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
           </div>
         );

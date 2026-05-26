@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Video, Image } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { getSettings } from '../../utils/settings';
 import { joinBilingualText, splitBilingualText } from '../../utils/bilingual';
@@ -18,6 +18,17 @@ interface Product {
   BusinessEmail?: string;
 }
 
+interface ProductMediaItem {
+  Id: number;
+  ProductId: number;
+  MediaType: 'image' | 'video';
+  MediaUrl: string;
+  DisplayOrder: number;
+  BusinessEmail: string;
+  IdBusiness: number;
+  isVideo: boolean;
+}
+
 interface ProductsMaintenanceProps {
   t: any;
 }
@@ -28,6 +39,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [currencyCode, setCurrencyCode] = useState('$');
+  const [productFirstMedia, setProductFirstMedia] = useState<Record<string, { url: string; isVideo: boolean }>>({});
 
   useEffect(() => {
     loadProducts();
@@ -41,12 +53,33 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       const { data, error } = await supabase
         .from('Products')
         .select('*')
-        .eq('IdBusiness', settings.id)
-        .order('Name');
+        .eq('IdBusiness', settings.id);
 
       if (error) throw error;
-      console.log('Loaded products:', data);
-      setProducts(data || []);
+
+      const productsData = (data || []).sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
+      setProducts(productsData);
+
+      const ids = productsData.map(p => p.Id).filter(Boolean);
+      if (ids.length > 0) {
+        const { data: media } = await supabase
+          .from('ProductMedia')
+          .select('ProductId, MediaUrl, isVideo, DisplayOrder')
+          .in('ProductId', ids)
+          .eq('IdBusiness', settings.id)
+          .order('DisplayOrder', { ascending: true });
+
+        const mediaMap: Record<string, { url: string; isVideo: boolean }> = {};
+        (media || []).forEach((m: any) => {
+          const key = String(m.ProductId);
+          const isVid = m.isVideo === true || m.isVideo === 'true';
+          const existing = mediaMap[key];
+          if (!existing || (isVid && !existing.isVideo)) {
+            mediaMap[key] = { url: m.MediaUrl, isVideo: isVid };
+          }
+        });
+        setProductFirstMedia(mediaMap);
+      }
     } catch (err) {
       console.error('Error loading products:', err);
     } finally {
@@ -54,7 +87,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     }
   };
 
-  const handleSave = async (product: Product, newImages: File[] = [], imagesToDelete: string[] = []) => {
+  const handleSave = async (product: Product) => {
     try {
       setLoading(true);
       const settings = await getSettings();
@@ -70,55 +103,13 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
           .single();
         if (error) throw error;
         productId = data.Id;
+      } else {
+        const { error } = await supabase
+          .from('Products')
+          .update(productData)
+          .eq('Id', productId);
+        if (error) throw error;
       }
-
-      let currentImageUrls: string[] = [];
-      try {
-        if (productData.ImageUrl && productData.ImageUrl.startsWith('[')) {
-          currentImageUrls = JSON.parse(productData.ImageUrl);
-        } else if (productData.ImageUrl) {
-          currentImageUrls = [productData.ImageUrl];
-        }
-      } catch (e) {
-        if (productData.ImageUrl) currentImageUrls = [productData.ImageUrl];
-      }
-
-      currentImageUrls = currentImageUrls.filter(url => !imagesToDelete.includes(url));
-
-      for (const url of imagesToDelete) {
-        const parts = url.split('/postore/');
-        if (parts.length > 1) {
-          const path = parts[1];
-          await supabase.storage.from('postore').remove([path]);
-        }
-      }
-
-      for (const file of newImages) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${settings.id}/${productId}/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('postore')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-
-        const { data: publicUrlData } = supabase.storage
-          .from('postore')
-          .getPublicUrl(filePath);
-
-        currentImageUrls.push(publicUrlData.publicUrl);
-      }
-
-      const finalImageUrl = currentImageUrls.length > 0 ? JSON.stringify(currentImageUrls) : '';
-
-      const { error: updateError } = await supabase
-        .from('Products')
-        .update({ ...productData, ImageUrl: finalImageUrl })
-        .eq('Id', productId);
-
-      if (updateError) throw updateError;
 
       await loadProducts();
       setEditingProduct(null);
@@ -134,7 +125,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
     if (!confirm(t.products.confirmDelete)) return;
 
     try {
-      const product = products.find(p => p.Id === id);
+      await supabase.from('ProductMedia').delete().eq('ProductId', id);
 
       const { error } = await supabase
         .from('Products')
@@ -142,38 +133,15 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
         .eq('Id', id);
 
       if (error) throw error;
-
-      // Delete all images from storage
-      if (product?.ImageUrl) {
-        const urls = getAllImages(product.ImageUrl);
-        const paths = urls
-          .map(url => url.split('/postore/').at(1))
-          .filter(Boolean) as string[];
-
-        if (paths.length > 0)
-          await supabase.storage.from('postore').remove(paths);
-      }
-
       await loadProducts();
     } catch (err) {
       console.error('Error deleting product:', err);
     }
   };
 
-  const getAllImages = (urlStr: string) => {
-    try {
-      if (urlStr?.startsWith('[')) {
-        return JSON.parse(urlStr) as string[];
-      }
-      return urlStr ? [urlStr] : [];
-    } catch (e) {
-      return urlStr ? [urlStr] : [];
-    }
-  };
-
   const ProductForm = ({ product, onSave, onCancel }: {
     product: Product;
-    onSave: (product: Product, newImages: File[], imagesToDelete: string[]) => void;
+    onSave: (product: Product) => void;
     onCancel: () => void;
   }) => {
     const initialName = splitBilingualText(product?.Name || '');
@@ -185,7 +153,7 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
 
     const [formData, setFormData] = useState({
       Price: product?.Price || 0,
-      ImageUrl: product?.ImageUrl || '',
+      ImageUrl: '',
       IsService: product?.IsService || false,
       IsOffer: product?.IsOffer || false,
       Active: product?.Active ?? true,
@@ -202,47 +170,6 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
       setDescEs(d.es);
       setDescEn(d.en);
     }, [product?.Id]);
-
-    const [existingImages, setExistingImages] = useState<string[]>(() => {
-      try {
-        if (product?.ImageUrl?.startsWith('[')) {
-          return JSON.parse(product.ImageUrl);
-        } else if (product?.ImageUrl) {
-          return [product.ImageUrl];
-        }
-      } catch (e) { }
-      return [];
-    });
-
-    const [newFiles, setNewFiles] = useState<File[]>([]);
-    const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files) {
-        const filesToAdd = Array.from(e.target.files);
-
-        const overSizeFiles = filesToAdd.filter(file => file.size > 1024 * 1024);
-        if (overSizeFiles.length > 0) {
-          alert("Una o más imágenes superan el tamaño máximo de 1MB. Por favor, selecciona imágenes más ligeras.");
-          return;
-        }
-
-        if (existingImages.length + newFiles.length + filesToAdd.length > 2) {
-          alert("Solo puedes subir un máximo de 2 imágenes.");
-          return;
-        }
-        setNewFiles([...newFiles, ...filesToAdd]);
-      }
-    };
-
-    const removeExistingImage = (url: string) => {
-      setExistingImages(existingImages.filter(img => img !== url));
-      setImagesToDelete([...imagesToDelete, url]);
-    };
-
-    const removeNewFile = (index: number) => {
-      setNewFiles(newFiles.filter((_, i) => i !== index));
-    };
 
     const buildProductForSave = (): Product => ({
       ...formData,
@@ -280,35 +207,6 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
               onChange={(e) => setFormData({ ...formData, Price: parseFloat(e.target.value) || 0 })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imágenes (Máx 2)</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              disabled={existingImages.length + newFiles.length >= 2}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <div className="flex gap-4 mt-4 flex-wrap">
-              {existingImages.map((url, i) => (
-                <div key={i} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
-                  <img src={url} alt="Product" className="w-full h-full object-cover" />
-                  <button onClick={() => removeExistingImage(url)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              {newFiles.map((file, i) => (
-                <div key={`new-${i}`} className="relative w-24 h-24 border rounded-lg overflow-hidden group">
-                  <img src={URL.createObjectURL(file)} alt="New Product" className="w-full h-full object-cover opacity-70" />
-                  <button onClick={() => removeNewFile(i)} className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t.products.descriptionSpanish}</label>
@@ -371,13 +269,128 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             {t.products.cancel}
           </button>
           <button
-            onClick={() => onSave(buildProductForSave(), newFiles, imagesToDelete)}
+            onClick={() => onSave(buildProductForSave())}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700"
           >
             <Save className="w-4 h-4 inline mr-1" />
             {t.products.save}
           </button>
         </div>
+      </div>
+    );
+  };
+
+  const MediaManager = ({ productId, businessEmail, idBusiness }: {
+    productId: number;
+    businessEmail: string;
+    idBusiness: number;
+  }) => {
+    const [mediaItems, setMediaItems] = useState<ProductMediaItem[]>([]);
+    const [newMediaUrl, setNewMediaUrl] = useState('');
+    const [isVideo, setIsVideo] = useState(false);
+    const [mediaLoading, setMediaLoading] = useState(true);
+
+    const loadMedia = async () => {
+      setMediaLoading(true);
+      const { data } = await supabase
+        .from('ProductMedia')
+        .select('*')
+        .eq('ProductId', productId)
+        .eq('IdBusiness', idBusiness)
+        .order('DisplayOrder', { ascending: true });
+      setMediaItems(data || []);
+      setMediaLoading(false);
+    };
+
+    useEffect(() => {
+      loadMedia();
+    }, [productId]);
+
+    const handleAddMedia = async () => {
+      if (!newMediaUrl.trim()) return;
+      if (mediaItems.length >= 10) {
+        alert(t.products.maxMediaReached || 'Maximum 10 media items allowed');
+        return;
+      }
+      await supabase.from('ProductMedia').insert([{
+        ProductId: productId,
+        MediaType: isVideo ? 'video' : 'image',
+        MediaUrl: newMediaUrl.trim(),
+        DisplayOrder: 0,
+        BusinessEmail: businessEmail,
+        IdBusiness: idBusiness,
+        isVideo
+      }]);
+      setNewMediaUrl('');
+      await loadMedia();
+    };
+
+    const handleDeleteMedia = async (mediaId: number) => {
+      await supabase.from('ProductMedia').delete().eq('Id', mediaId);
+      await loadMedia();
+    };
+
+    const handleToggleVideo = async (mediaId: number, currentIsVideo: boolean) => {
+      await supabase.from('ProductMedia')
+        .update({ isVideo: !currentIsVideo, MediaType: !currentIsVideo ? 'video' : 'image' })
+        .eq('Id', mediaId);
+      await loadMedia();
+    };
+
+    return (
+      <div className="border-t border-gray-200 pt-4 mt-4">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">{t.products.productMedia || 'Product Media'}</h3>
+        <div className="flex gap-3 mb-3 flex-wrap">
+          <input
+            type="text"
+            value={newMediaUrl}
+            onChange={(e) => setNewMediaUrl(e.target.value)}
+            placeholder="Enter image or video URL..."
+            className="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+          <label className="flex items-center gap-1 text-sm text-gray-700 whitespace-nowrap">
+            <input type="checkbox" checked={isVideo} onChange={(e) => setIsVideo(e.target.checked)} />
+            {t.products.isVideo || 'Is Video'}
+          </label>
+          <button
+            onClick={handleAddMedia}
+            className="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            {t.products.addMedia || 'Add'}
+          </button>
+        </div>
+        {mediaLoading ? (
+          <p className="text-sm text-gray-500">Loading media...</p>
+        ) : mediaItems.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {mediaItems.map(media => (
+              <div key={media.Id} className="bg-gray-100 p-2 rounded-lg">
+                {media.isVideo ? (
+                  <video controls src={media.MediaUrl} className="w-full h-32 object-cover rounded" />
+                ) : (
+                  <img src={media.MediaUrl} alt="" className="w-full h-32 object-cover rounded" />
+                )}
+                <div className="mt-2 flex gap-1 justify-center">
+                  <button
+                    onClick={() => handleToggleVideo(media.Id, media.isVideo)}
+                    className="p-1 text-gray-500 hover:text-blue-600"
+                    title={media.isVideo ? 'Mark as Image' : 'Mark as Video'}
+                  >
+                    {media.isVideo ? <Image className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMedia(media.Id)}
+                    className="p-1 text-gray-500 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">{t.products.noMedia || 'No media added yet.'}</p>
+        )}
       </div>
     );
   };
@@ -431,20 +444,37 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
             const descParts = splitBilingualText(product.Description || '');
             const titlePrimary = nameParts.es || nameParts.en || product.Name;
             const altLabel = (titlePrimary || 'Product').trim();
+            const firstMedia = productFirstMedia[String(product.Id)];
 
             return (
             <div key={product.Id} className="bg-white border border-gray-200 rounded-lg p-4">
               {editingProduct?.Id === product.Id && editingProduct ? (
-                <ProductForm
-                  key={editingProduct.Id}
-                  product={editingProduct}
-                  onSave={handleSave}
-                  onCancel={() => setEditingProduct(null)}
-                />
+                <div>
+                  <ProductForm
+                    key={editingProduct.Id}
+                    product={editingProduct}
+                    onSave={handleSave}
+                    onCancel={() => setEditingProduct(null)}
+                  />
+                  {editingProduct.Id && (
+                    <MediaManager
+                      productId={editingProduct.Id}
+                      businessEmail={editingProduct.BusinessEmail || ''}
+                      idBusiness={editingProduct.IdBusiness}
+                    />
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0">
                   <div className="flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 px-4 py-4">
+                      {firstMedia && !firstMedia.isVideo && (
+                        <img
+                          src={firstMedia.url}
+                          alt={altLabel}
+                          className="w-14 h-14 rounded-lg object-cover border border-gray-200 flex-shrink-0"
+                        />
+                      )}
                       <h3 className="text-lg font-medium flex-1">
                         {titlePrimary}
                         {nameParts.es && nameParts.en ? (
@@ -474,19 +504,6 @@ export function ProductsMaintenance({ t }: ProductsMaintenanceProps) {
                         <p className="text-gray-500 text-xs">{descParts.en}</p>
                       ) : null}
                     </div>
-
-                    {getAllImages(product.ImageUrl).length > 0 && (
-                      <div className="flex gap-2 px-4 pb-4">
-                        {getAllImages(product.ImageUrl).map((imgUrl, i) => (
-                          <img
-                            key={i}
-                            src={imgUrl}
-                            alt={`${altLabel} ${i + 1}`}
-                            className="w-16 h-16 rounded-lg object-cover border border-gray-200"
-                          />
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="flex gap-2 self-end sm:self-start sm:ml-4 sm:mt-4 mt-2">
                     <button

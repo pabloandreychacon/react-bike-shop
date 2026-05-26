@@ -9,6 +9,8 @@ export interface Service {
   description: string;
   price: string;
   image?: string;
+  isVideo?: boolean;
+  mediaItems?: { url: string; isVideo: boolean }[];
 }
 
 export async function getServicesFromSupabase(language: Language = 'en'): Promise<Service[]> {
@@ -27,13 +29,38 @@ export async function getServicesFromSupabase(language: Language = 'en'): Promis
       return [];
     }
 
-    return data?.map(product => ({
-      id: product.Id?.toString() || '',
-      title: parseBilingualText(product.Name || '', language),
-      description: parseBilingualText(product.Description || '', language),
-      price: product.Price ? `${settings.currencyCode || '$'}${product.Price}` : 'Free',
-      image: product.ImageUrl || undefined
-    })) || [];
+    const products = data || [];
+    const ids = products.map(p => p.Id).filter(Boolean);
+
+    let mediaMap: Record<number, { url: string; isVideo: boolean }[]> = {};
+    if (ids.length > 0) {
+      const { data: media } = await supabase
+        .from('ProductMedia')
+        .select('ProductId, MediaUrl, isVideo')
+        .in('ProductId', ids)
+        .eq('IdBusiness', settings.id)
+        .order('DisplayOrder', { ascending: true });
+
+      (media || []).forEach((m: any) => {
+        if (!mediaMap[m.ProductId]) mediaMap[m.ProductId] = [];
+        mediaMap[m.ProductId].push({ url: m.MediaUrl, isVideo: m.isVideo === true || m.isVideo === 'true' });
+      });
+    }
+
+    return products.map(product => {
+      const items = mediaMap[product.Id] || [];
+      const urls = items.map(i => i.url);
+      const imageStr = urls.length > 1 ? JSON.stringify(urls) : (urls[0] || product.ImageUrl || '');
+      return {
+        id: product.Id?.toString() || '',
+        title: parseBilingualText(product.Name || '', language),
+        description: parseBilingualText(product.Description || '', language),
+        price: product.Price ? `${settings.currencyCode || '$'}${product.Price}` : 'Free',
+        image: imageStr || undefined,
+        isVideo: items[0]?.isVideo || /\.mp4$/i.test(product.ImageUrl || ''),
+        mediaItems: items.length > 0 ? items : undefined
+      };
+    }) || [];
   } catch (err) {
     console.error('Unexpected error fetching services:', err);
     return [];

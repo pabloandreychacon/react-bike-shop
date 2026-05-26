@@ -5,6 +5,7 @@ import { Language } from '../utils/i18n';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SEO } from '../components/SEO';
+import { MediaCarousel } from '../components/MediaCarousel';
 
 interface ServicesPageProps {
   t: any;
@@ -61,7 +62,7 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
       setLoading(true);
       const settings = await getSettings();
       const currency = settings.currencyCode || '$';
-      
+
       const defaultServicesWithCurrency = defaultServices.map(s => ({
         ...s,
         price: s.price.replace('$', currency)
@@ -101,17 +102,30 @@ export function ServicesPage({ t, language = 'en' }: ServicesPageProps) {
                     key={service.id || `service-${index}`}
                     className="block bg-white p-8 rounded-xl shadow-sm hover:shadow-lg transition-shadow"
                   >
-                    <div className="flex flex-col lg:flex-row items-start gap-4 lg:gap-8">
-                      <div className="w-full lg:w-auto flex justify-center lg:justify-start">
-                        {getFirstImage(service.image) ? (
-                          <img
-                            src={getFirstImage(service.image)}
-                            alt={service.title}
-                            className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
-                          />
-                        ) : (
-                          icons[index % icons.length]
-                        )}
+                    <div className="flex flex-col items-start gap-4 lg:gap-8">
+                      <div className="w-full lg:w-56 flex-shrink-0">
+                        {service.mediaItems ? (
+                          <MediaCarousel items={service.mediaItems} className="w-full h-48 md:h-56 rounded-xl shadow-sm ring-1 ring-gray-100" />
+                        ) : (() => {
+                          const img = getFirstImage(service.image);
+                          if (!img) return <div className="w-48 h-48 md:w-56 md:h-56 flex items-center justify-center">{icons[index % icons.length]}</div>;
+                          return /\.mp4(\?|$)/i.test(img) || /\.(webm|mov|avi|mkv)(\?|$)/i.test(img) || service.isVideo ? (
+                            <video
+                              src={img}
+                              className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
+                              muted
+                              autoPlay
+                              loop
+                              playsInline
+                            />
+                          ) : (
+                            <img
+                              src={img}
+                              alt={service.title}
+                              className="w-48 h-48 md:w-56 md:h-56 rounded-xl object-cover shadow-sm ring-1 ring-gray-100"
+                            />
+                          );
+                        })()}
                       </div>
                       <div className="flex-1 text-center lg:text-left mt-4 lg:mt-0">
                         <h3 className="text-xl font-semibold mb-2">{service.title}</h3>

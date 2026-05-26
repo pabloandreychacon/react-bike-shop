@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Video } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Language } from '../utils/i18n';
 import { splitBilingualText } from '../utils/bilingual';
@@ -22,14 +22,19 @@ interface Product {
   Active: boolean;
 }
 
+interface MediaItem {
+  MediaUrl: string;
+  isVideo: boolean;
+}
+
 export function ProductDetailPage({ t, language = 'en' }: ProductDetailPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [currencyCode, setCurrencyCode] = useState('$');
-  const [images, setImages] = useState<string[]>([]);
-  const [selectedImage, setSelectedImage] = useState(0);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -50,18 +55,31 @@ export function ProductDetailPage({ t, language = 'en' }: ProductDetailPageProps
         if (error) throw error;
         
         setProduct(data);
-        
-        let urls: string[] = [];
-        try {
-          if (data.ImageUrl?.startsWith('[')) {
-            urls = JSON.parse(data.ImageUrl);
-          } else if (data.ImageUrl) {
-            urls = [data.ImageUrl];
+
+        const { data: media } = await supabase
+          .from('ProductMedia')
+          .select('MediaUrl, isVideo')
+          .eq('ProductId', data.Id)
+          .eq('IdBusiness', settings.id)
+          .order('DisplayOrder', { ascending: true });
+
+        if (media && media.length > 0) {
+          setMediaItems(media.map((m: any) => ({ MediaUrl: m.MediaUrl, isVideo: m.isVideo === true || m.isVideo === 'true' })));
+        } else {
+          const fallback: MediaItem[] = [];
+          const detectVideo = (url: string) => isVideoUrl(url);
+          try {
+            if (data.ImageUrl?.startsWith('[')) {
+              const urls: string[] = JSON.parse(data.ImageUrl);
+              urls.forEach(url => fallback.push({ MediaUrl: url, isVideo: detectVideo(url) }));
+            } else if (data.ImageUrl) {
+              fallback.push({ MediaUrl: data.ImageUrl, isVideo: detectVideo(data.ImageUrl) });
+            }
+          } catch (e) {
+            if (data.ImageUrl) fallback.push({ MediaUrl: data.ImageUrl, isVideo: detectVideo(data.ImageUrl) });
           }
-        } catch {
-          if (data.ImageUrl) urls = [data.ImageUrl];
+          setMediaItems(fallback);
         }
-        setImages(urls);
       } catch (err) {
         console.error('Error fetching product:', err);
       } finally {
@@ -98,12 +116,17 @@ export function ProductDetailPage({ t, language = 'en' }: ProductDetailPageProps
   const title = nameParts[language] || nameParts.en || nameParts.es || product.Name;
   const description = descParts[language] || descParts.en || descParts.es || product.Description;
 
+  const currentMedia = mediaItems[selectedIndex];
+  const isVideoUrl = (url: string) => /\.mp4(\?|$)/i.test(url) || /\.(webm|mov|avi|mkv)(\?|$)/i.test(url);
+
+  const isCurrentVideo = currentMedia?.isVideo === true || isVideoUrl(currentMedia?.MediaUrl || '');
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <SEO
         title={title}
         description={description}
-        image={images[0]}
+        image={mediaItems[0]?.MediaUrl}
       />
       <div className="container mx-auto px-4 max-w-6xl">
         <button 
@@ -116,32 +139,53 @@ export function ProductDetailPage({ t, language = 'en' }: ProductDetailPageProps
 
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {/* Image Gallery */}
+            {/* Media Gallery */}
             <div className="flex flex-col gap-4">
               <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
-                {images.length > 0 ? (
-                  <img 
-                    src={images[selectedImage]} 
-                    alt={title} 
-                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                  />
+                {mediaItems.length > 0 && currentMedia ? (
+                  isCurrentVideo ? (
+                    <video 
+                      src={currentMedia.MediaUrl}
+                      className="w-full h-full object-cover"
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <img 
+                      src={currentMedia.MediaUrl}
+                      alt={title} 
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  )
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     No image available
                   </div>
                 )}
               </div>
-              {images.length > 1 && (
+              {mediaItems.length > 1 && (
                 <div className="grid grid-cols-5 gap-2">
-                  {images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setSelectedImage(idx)}
-                      className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === idx ? 'border-blue-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                    >
-                      <img src={img} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
+                  {mediaItems.map((media, idx) => {
+                    const isVideo = media.isVideo === true || isVideoUrl(media.MediaUrl);
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedIndex(idx)}
+                        className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedIndex === idx ? 'border-blue-600 opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                      >
+                        {isVideo ? (
+                          <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+                            <Video className="w-6 h-6 text-white" />
+                          </div>
+                        ) : (
+                          <img src={media.MediaUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
